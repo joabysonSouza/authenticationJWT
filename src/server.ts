@@ -3,16 +3,14 @@ import { Request, Response } from "express";
 import { string, z } from "zod";
 import { User } from "./Models/User";
 import bcrypt from "bcrypt";
-import jwt  from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 import { limiter } from "./middleware/rateLimiter";
-import {checkToken} from './middleware/checkToken'
+import { checkToken, verifyRefreshToken } from "./middleware/checkToken";
 
 const app = express();
 
 app.use(express.json());
 app.use(limiter);
-
-
 
 app.get("/", async (req: Request, res: Response) => {
   return res.status(200).json({ messagen: "tudo certo" });
@@ -32,20 +30,18 @@ const loginSchema = z.object({
 });
 
 //rotas
-app.get("/user/:id" ,checkToken, async(req , res)=>{
+app.get("/user/:id", checkToken, async (req, res) => {
+  const id = req.params.id;
 
-  const id = req.params.id
+  //checando se o usuário existe
 
-  //checando se o usuário existe 
-
-  const user = await User.findById(id, "-Password")
-  if(!user){
-    return res.status(400).json({message: "Usuário não encontrado"})
+  const user = await User.findById(id, "-Password");
+  if (!user) {
+    return res.status(400).json({ message: "Usuário não encontrado" });
   }
 
-  return res.status(200).json({user})
-
-})
+  return res.status(200).json({ user });
+});
 
 app.post("/auth", async (req: Request, res: Response) => {
   const { Name, Email, Password, confirmPassword } = authSchema.parse(req.body);
@@ -89,31 +85,38 @@ app.post("/auth", async (req: Request, res: Response) => {
 
 app.post("/login", async (req: Request, res: Response) => {
   const { Email, Password } = loginSchema.parse(req.body);
-  const user = await User.findOne({ Email:Email })
+  const user = await User.findOne({ Email: Email });
   const comaparePassword = await bcrypt.compare(Password, user!.Password!);
 
   if (!user || !comaparePassword) {
-    return res.status(400).json({ message: "Usuário e/ou senha errados!!"  });
+    return res.status(400).json({ message: "Usuário e/ou senha errados!!" });
   }
 
-  try{
-    const secret = process.env.SECRET 
-    const token = jwt.sign({
-      id :user._id
-    }, secret!)
-  res.status(200).json({message: "Autenticado com sucesso!" , token})
+  try {
+    const secret = process.env.SECRET;
+    const refreshSecret = process.env.REFRESH_TOKEN;
 
-  }catch(error){
-    console.log(error)
-    return res.status(500).json({message: "Houve algum erro no servidor"})
+    const refresToken = jwt.sign({ id: user._id }, refreshSecret!, {
+      expiresIn: "1800s",
+    });
+
+    const token = jwt.sign({ refresToken }, secret!, { expiresIn: "40s" });
+
+    res.status(200).json({ message: "Autenticado com sucesso!", refresToken , token});
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Houve algum erro no servidor" });
   }
+});
 
+app.post("/refresh", verifyRefreshToken, (req: Request, res: Response) => {
+  const {refresToken} = req.body;
+  const secret = process.env.SECRET;
+  const token = jwt.sign({ refresToken }, secret!, {
+    expiresIn: "40s",
+  });
 
- 
-
- 
+  return res.json({ token});
 });
 
 export default app;
-
-
