@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { limiter } from "./middleware/rateLimiter";
 import { checkToken, verifyRefreshToken } from "./middleware/checkToken";
 import * as argon2 from "argon2";
-import { authSchema, loginSchema } from "./Schemas/authSchemas";
+import { registerSchema, loginSchema } from "./Schemas/authSchemas";
 
 const app = express();
 
@@ -30,8 +30,8 @@ app.get("/user/:id", checkToken, async (req, res) => {
   return res.status(200).json({ user });
 });
 
-app.post("/auth", async (req: Request, res: Response) => {
-  const { Name, Email, Password, confirmPassword } = authSchema.parse(req.body);
+app.post("/register", async (req: Request, res: Response) => {
+  const { Name, Email, Password, confirmPassword } = registerSchema.parse(req.body);
 
   try {
     //validação de senhas
@@ -44,8 +44,11 @@ app.post("/auth", async (req: Request, res: Response) => {
     if (userExist) {
       return res
         .status(400)
-        .json({ message: "Por favor utilize outro email! " });
+        .json({ message: "Por favor utilize outro email!"});
     }
+
+  
+
 
     // criando hash da senha
 
@@ -61,9 +64,9 @@ app.post("/auth", async (req: Request, res: Response) => {
     });
 
     await Newuser.save();
-    return res.status(201).json({ message: "Usuario cadastrado com sucesso" });
+    return res.status(201).json({ message: "Usuario cadastrado com sucesso"});
   } catch (error) {
-    console.log(error);
+   
     return res
       .status(400)
       .send({ message: "houve algum error ao validar os campos" });
@@ -78,7 +81,7 @@ app.post("/login", async (req: Request, res: Response) => {
   const comaparePassword = await argon2.verify(user!.Password!, Password);
 
   if (!user || !comaparePassword) {
-    return res.status(400).json({ message: "Usuário e/ou senha errados!!" });
+    return res.status(400).json({message: "Usuário e/ou senha incorretos!!"});
   }
 
   try {
@@ -95,10 +98,13 @@ app.post("/login", async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "Autenticado com sucesso!", refresToken, token });
   } catch (error) {
+    
     console.log(error);
     return res.status(500).json({ message: "Houve algum erro no servidor" });
   }
 });
+
+
 
 app.post("/refresh", verifyRefreshToken, (req: Request, res: Response) => {
   const { refresToken } = req.body;
@@ -110,4 +116,4 @@ app.post("/refresh", verifyRefreshToken, (req: Request, res: Response) => {
   return res.json({ token });
 });
 
-export default app;
+export default app ;
