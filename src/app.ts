@@ -1,6 +1,6 @@
 import express from "express";
 import { Request, Response } from "express";
-import { User } from "./Models/User";
+import User  from "./Models/User";
 import jwt from "jsonwebtoken";
 import { limiter } from "./middleware/rateLimiter";
 import { checkToken, verifyRefreshToken } from "./middleware/checkToken";
