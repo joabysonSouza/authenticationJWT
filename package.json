@@ -5,7 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "jest": "jest --watchAll --detectOpenHandles ",
-    "dev": "tsx watch ./src/server.ts"
+    "dev": "tsx watch ./src/server.ts",
+    "start": "tsx watch ./src/server.ts"
   },
   "keywords": [],
   "author": "",
