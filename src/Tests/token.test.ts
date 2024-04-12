@@ -1,6 +1,8 @@
-import { Request, Response } from "express";
+import {  Request, Response } from "express";
 import jwt, { Secret } from "jsonwebtoken";
-import { checkToken } from "../middleware/checkToken";
+import { checkToken, verifyRefreshToken } from "../middleware/checkToken";
+import  request  from "supertest";
+import app from "../app";
 
 // Mock express Request e Response
 const reqMock = {} as Request;
@@ -17,7 +19,7 @@ describe("checkToken middleware", () => {
     jest.clearAllMocks();
   });
 
-  it("should return 401 if no token is provided", () => {
+  it("deve returna 401 se o token não for fornecido", () => {
     checkToken(reqMock, resMock, () => {});
     expect(resMock.status).toHaveBeenCalledWith(401);
     expect(resMock.json).toHaveBeenCalledWith({ message: "Acesso negado!" });
@@ -36,7 +38,7 @@ describe("checkToken middleware", () => {
     expect(resMock.json).toHaveBeenCalledWith({ message: "Token inválido!" });
   });
 
-  it("should call next if token is valid", () => {
+  it("deve chamar a função next se o token for valido", () => {
     reqMock.headers = { authorization: "Bearer validToken" };
 
     (jwt.verify as jest.Mock).mockReturnValueOnce(true);
@@ -48,3 +50,4 @@ describe("checkToken middleware", () => {
     expect(nextMock).toHaveBeenCalled();
   });
 });
+

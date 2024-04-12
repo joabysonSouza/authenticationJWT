@@ -31,7 +31,9 @@ app.get("/user/:id", checkToken, async (req, res) => {
 });
 
 app.post("/register", async (req: Request, res: Response) => {
-  const { Name, Email, Password, confirmPassword } = registerSchema.parse(req.body);
+  const { Name, Email, Password, confirmPassword } = registerSchema.parse(
+    req.body
+  );
 
   try {
     //validação de senhas
@@ -44,15 +46,10 @@ app.post("/register", async (req: Request, res: Response) => {
     if (userExist) {
       return res
         .status(400)
-        .json({ message: "Por favor utilize outro email!"});
+        .json({ message: "Por favor utilize outro email!" });
     }
 
-  
-
-
     // criando hash da senha
-
- 
 
     const passwordHash = await argon2.hash(Password);
 
@@ -64,9 +61,8 @@ app.post("/register", async (req: Request, res: Response) => {
     });
 
     await Newuser.save();
-    return res.status(201).json({ message: "Usuario cadastrado com sucesso"});
+    return res.status(201).json({ message: "Usuario cadastrado com sucesso" });
   } catch (error) {
-   
     return res
       .status(400)
       .send({ message: "houve algum error ao validar os campos" });
@@ -81,7 +77,7 @@ app.post("/login", async (req: Request, res: Response) => {
   const comaparePassword = await argon2.verify(user!.Password!, Password);
 
   if (!user || !comaparePassword) {
-    return res.status(400).json({message: "Usuário e/ou senha incorretos!!"});
+    return res.status(400).json({ message: "Usuário e/ou senha incorretos!!" });
   }
 
   try {
@@ -92,28 +88,26 @@ app.post("/login", async (req: Request, res: Response) => {
       expiresIn: "1800s",
     });
 
-    const token = jwt.sign({ refresToken }, secret!, { expiresIn: "40s" });
+    const token = jwt.sign({ refresToken }, secret!, { expiresIn: "1800s" });
 
     res
       .status(200)
       .json({ message: "Autenticado com sucesso!", refresToken, token });
   } catch (error) {
-    
     console.log(error);
     return res.status(500).json({ message: "Houve algum erro no servidor" });
   }
 });
 
-
-
+// rota para refresh token
 app.post("/refresh", verifyRefreshToken, (req: Request, res: Response) => {
   const { refresToken } = req.body;
   const secret = process.env.SECRET;
   const token = jwt.sign({ refresToken }, secret!, {
-    expiresIn: "40s",
+    expiresIn: "1800s",
   });
 
   return res.json({ token });
 });
 
-export default app ;
+export default app;

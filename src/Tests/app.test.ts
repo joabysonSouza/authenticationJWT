@@ -3,6 +3,9 @@ import app from "../app";
 import { User } from "../Models/User";
 import jwt from "jsonwebtoken";
 import * as argon2 from "argon2";
+import dotEnv from "dotenv";
+
+dotEnv.config();
 
 describe("test my app server", () => {
   it("should get main router", async () => {
@@ -36,14 +39,12 @@ describe("Validação de email", () => {
 
     User.findOne = jest.fn().mockReturnValue(user);
 
-    const response = await request(app)
-      .post("/register")
-      .send({
-        Name: "Usuário",
-        Email: "usuario@example.com",
-        Password: "12345678",
-        confirmPassword: "12345678",
-      });
+    const response = await request(app).post("/register").send({
+      Name: "Usuário",
+      Email: "usuario@example.com",
+      Password: "12345678",
+      confirmPassword: "12345678",
+    });
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
@@ -78,6 +79,9 @@ describe("Validação de email", () => {
 });
 
 describe("Teste de login", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   it("deve retornar uma mensagem de erro se o usuário ou a senha estiverem incorretos", async () => {
     const req = {
       body: {
